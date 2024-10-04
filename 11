@@ -1,0 +1,38 @@
+function parse_parent_product_images_for_variation($variation_id) {
+    // Получаем ID родительского товара
+    $parent_id = wp_get_post_parent_id($variation_id);
+    
+    if (!$parent_id) {
+        return '';
+    }
+    
+    // Получаем все изображения родительского товара
+    $gallery_images_ids = get_post_meta($parent_id, '_product_image_gallery', true);
+    
+    // Добавляем главное изображение родительского товара
+    $featured_image_id = get_post_thumbnail_id($parent_id);
+    if ($featured_image_id) {
+        $gallery_images_ids = $featured_image_id . ',' . $gallery_images_ids;
+    }
+    
+    // Преобразуем строку с ID изображений в массив
+    $gallery_images_ids = array_filter(explode(',', $gallery_images_ids));
+    
+    // Получаем URL всех изображений
+    $images_urls = array();
+    foreach ($gallery_images_ids as $image_id) {
+        $image_url = wp_get_attachment_url($image_id);
+        if ($image_url) {
+            $images_urls[] = $image_url;
+        }
+    }
+    
+    // Возвращаем URL изображений через запятую
+    return implode(',', $images_urls);
+}
+
+// Использование функции в WP All Export
+add_filter('wp_all_export_variable_product_images', 'export_variation_images', 10, 2);
+function export_variation_images($images, $variation_id) {
+    return parse_parent_product_images_for_variation($variation_id);
+}
